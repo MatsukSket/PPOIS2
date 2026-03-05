@@ -27,6 +27,7 @@ def main() -> None:
 
     cloth_shop.add_product(Product(id=201, name="Shirt", price=25.0, stock=50))
     cloth_shop.add_product(Product(id=202, name="Jeans", price=60.0, stock=20))
+    cloth_shop.add_product(Product(id=203, name="Laptop", price=1000.0, stock=1))
 
     tech_shop.active_promotion = Promotion(name="MEGAA SALE", discount_percent=5)
 
