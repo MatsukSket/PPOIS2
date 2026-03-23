@@ -1,97 +1,143 @@
-import unittest
+import pytest
+from copy import copy
+
+# Предполагается, что твой код лежит в модуле src
+# Для работы тестов в одном файле без структуры папок просто импортируй классы
 from src.models import (
-    Product, Customer, Seller, Shop,
-    ShoppingGallery, ShoppingMall, Promotion
+    Product, Promotion, Customer, Seller, CashRegister,
+    Shop, ShoppingGallery, ShoppingMall
 )
-from src.services import MallServices
 from src.exceptions import (
     OutOfStockError, InsufficientFundsError,
     SpaceAlreadyRentedError, ShopNotFoundError
 )
+from src.services import MallServices
 
 
-class TestShoppingMall(unittest.TestCase):
-    def setUp(self):
-        """Prepare func."""
-        self.gallery = ShoppingGallery(capacity=2)
-        self.mall = ShoppingMall(name="TestMall", gallery=self.gallery)
+# --- Фикстуры (Fixtures) ---
 
-        self.seller = Seller(name="TestSeller")
-        self.shop = Shop(name="TestShop", seller=self.seller)
-        self.mall.gallery.rent_space(self.shop)
-
-        self.product = Product(id=1, name="TestPhone", price=1000.0, stock=2)
-        self.shop.add_product(self.product)
-
-        self.customer = Customer(name="TestUser", balance=1500.0)
-        self.services = MallServices(self.mall)
-
-    def test_product_decrease_stock(self):
-        """Check if product decreases stock."""
-        self.product.decrease_stock(1)
-        self.assertEqual(self.product.stock, 1)
-
-        with self.assertRaises(OutOfStockError):
-            self.product.decrease_stock(5)
-
-    def test_customer_deduct_funds(self):
-        """Check if customer deduct funds."""
-        self.customer.deduct_funds(500.0)
-        self.assertEqual(self.customer.balance, 1000.0)
-
-        with self.assertRaises(InsufficientFundsError):
-            self.customer.deduct_funds(2000.0)
-
-    def test_gallery_capacity_limit(self):
-        """Check if gallery capacity limit."""
-        shop2 = Shop(name="Shop2", seller=self.seller)
-        shop3 = Shop(name="Shop3", seller=self.seller)
-
-        self.mall.gallery.rent_space(shop2)  # Это должно сработать (вместимость 2)
-
-        with self.assertRaises(SpaceAlreadyRentedError):
-            self.mall.gallery.rent_space(shop3)  # Лимит превышен
-
-    def test_successful_purchase(self):
-        """Check if successful purchase."""
-        self.services.purchase_item(self.customer, "TestShop", 1)
-
-        self.assertEqual(self.customer.balance, 500.0)  # 1500 - 1000
-        self.assertEqual(self.product.stock, 1)  # 2 - 1
-        self.assertEqual(len(self.customer.purchased_items), 1)
-        self.assertEqual(self.shop.cash_register.total_revenue, 1000.0)
-
-    def test_purchase_with_promotion(self):
-        """Check if successful purchase with promotion."""
-        # 10% sale
-        self.shop.active_promotion = Promotion(name="Sale 10%", discount_percent=10)
-        self.customer.participates_in_promotions = True
-
-        self.services.purchase_item(self.customer, "TestShop", 1)
-
-        # Товар стоил 1000, со скидкой 10% должен стоить 900
-        self.assertEqual(self.customer.balance, 600.0)  # 1500 - 900
-        self.assertEqual(self.shop.cash_register.total_revenue, 900.0)
-
-    def test_search_product(self):
-        """Check if searching product."""
-        # Ищем 'phone' с маленькой буквы, хотя товар называется 'TestPhone'
-        results = self.services.search_product("phone")
-
-        self.assertEqual(len(results), 1)
-        shop, product = results[0]
-        self.assertEqual(shop.name, "TestShop")
-        self.assertEqual(product.name, "TestPhone")
-
-    def test_rate_seller(self):
-        """Check if rate seller."""
-        self.services.rate_service("TestShop", 4.0)
-        self.services.rate_service("TestShop", 5.0)
-
-        # Среднее между 4.0 и 5.0 = 4.5
-        self.assertEqual(self.seller.service_rating, 4.5)
-        self.assertEqual(self.seller.reviews_count, 2)
+@pytest.fixture
+def sample_product():
+    return Product(id=1, name="Smartphone", price=500.0, stock=2)
 
 
-if __name__ == '__main__':
-    unittest.main()
+@pytest.fixture
+def sample_promotion():
+    return Promotion(name="BLACK FRIDAY", discount_percent=10.0)
+
+
+@pytest.fixture
+def sample_customer():
+    return Customer(name="Alice", balance=1000.0)
+
+
+@pytest.fixture
+def sample_shop(sample_product):
+    seller = Seller(name="Bob")
+    shop = Shop(name="TechStore", seller=seller)
+    shop.add_product(sample_product)
+    return shop
+
+
+@pytest.fixture
+def mall_services(sample_shop):
+    gallery = ShoppingGallery(capacity=2)
+    mall = ShoppingMall(name="TestMall", gallery=gallery)
+    services = MallServices(mall)
+    services.rent_shop_space(sample_shop)
+    return services
+
+
+# --- Тесты для Моделей (Models) ---
+
+def test_product_decrease_stock(sample_product):
+    sample_product.decrease_stock(1)
+    assert sample_product.stock == 1
+
+
+def test_product_out_of_stock(sample_product):
+    with pytest.raises(OutOfStockError):
+        sample_product.decrease_stock(3)
+
+
+def test_promotion_apply_discount(sample_promotion):
+    price = 100.0
+    discounted = sample_promotion.apply_discount(price)
+    assert discounted == 90.0
+
+
+def test_customer_deduct_funds(sample_customer):
+    sample_customer.deduct_funds(200.0)
+    assert sample_customer.balance == 800.0
+
+
+def test_customer_insufficient_funds(sample_customer):
+    with pytest.raises(InsufficientFundsError):
+        sample_customer.deduct_funds(1500.0)
+
+
+def test_seller_update_rating():
+    seller = Seller(name="Test")
+    seller.update_rating(5.0)
+    seller.update_rating(3.0)
+    assert seller.reviews_count == 2
+    assert seller.service_rating == 4.0
+
+
+def test_cash_register_process_purchase(sample_customer, sample_product):
+    register = CashRegister()
+    register.process_purchase(sample_customer, sample_product)
+
+    assert sample_customer.balance == 500.0
+    assert sample_product.stock == 1
+    assert len(sample_customer.purchased_items) == 1
+    assert register.total_revenue == 500.0
+
+
+def test_shopping_gallery_rent_space(sample_shop):
+    gallery = ShoppingGallery(capacity=1)
+    gallery.rent_space(sample_shop)
+    assert "TechStore" in gallery.shops
+
+    # Проверка на превышение лимита
+    shop2 = Shop(name="ExtraStore", seller=Seller(name="Charlie"))
+    with pytest.raises(SpaceAlreadyRentedError):
+        gallery.rent_space(shop2)
+
+
+# --- Тесты для Сервисов (Services) ---
+
+def test_search_product(mall_services):
+    results = mall_services.search_product("smart")
+    assert len(results) == 1
+    shop, product = results[0]
+    assert shop.name == "TechStore"
+    assert product.name == "Smartphone"
+
+
+def test_purchase_item_success(mall_services, sample_customer):
+    mall_services.purchase_item(sample_customer, "TechStore", 1)
+    assert sample_customer.balance == 500.0
+    assert len(sample_customer.purchased_items) == 1
+
+
+def test_purchase_item_shop_not_found(mall_services, sample_customer):
+    with pytest.raises(ShopNotFoundError):
+        mall_services.purchase_item(sample_customer, "GhostShop", 1)
+
+
+def test_toggle_promotion(sample_customer):
+    assert not sample_customer.participates_in_promotions
+    MallServices.toggle_promotion_participation(sample_customer)
+    assert sample_customer.participates_in_promotions
+
+
+def test_rate_service(mall_services):
+    mall_services.rate_service("TechStore", 4.0)
+    shop = mall_services.mall.gallery.shops["TechStore"]
+    assert shop.seller.service_rating == 4.0
+
+
+def test_rate_service_invalid_rating(mall_services):
+    with pytest.raises(ValueError):
+        mall_services.rate_service("TechStore", 6.0)

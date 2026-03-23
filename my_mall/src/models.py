@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
-from exceptions import (
+from src.exceptions import (
     OutOfStockError,
     InsufficientFundsError,
     SpaceAlreadyRentedError
