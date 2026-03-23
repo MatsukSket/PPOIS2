@@ -14,6 +14,8 @@ class Controller:
         self.view.action_delete.triggered.connect(self.delete_student)
         self.view.action_load_xml.triggered.connect(self.load_xml)
         self.view.action_save_xml.triggered.connect(self.save_xml)
+        self.view.action_view_table.triggered.connect(self.show_table_view)
+        self.view.action_view_tree.triggered.connect(self.show_tree_view)
 
         self.current_data = []
         self.current_page = 1
@@ -45,11 +47,15 @@ class Controller:
             'ФИО матери', 'ЗП матери', 'Братья', 'Сестры'
         ])
 
+        tree_model = QStandardItemModel()
+        tree_model.setHorizontalHeaderLabels(['Студент / Параметр', 'Значение'])
+
         total_records = len(self.current_data)
 
         if total_records == 0:
             self.view.page_label.setText("0 из 0")
             self.view.table.setModel(table_model)
+            self.view.tree.setModel(tree_model)
             self.update_pagination_buttons(0)
             return
 
@@ -68,9 +74,36 @@ class Controller:
             items_list = [QStandardItem(str(value)) for value in row]
             table_model.appendRow(items_list)
 
+            student_name = str(row[0])
+            f_name, f_inc = str(row[1]), f"{row[2]} BYN"
+            m_name, m_inc = str(row[3]), f"{row[4]} BYN"
+            bros, sis = str(row[5]), str(row[6])
+
+            student_item = QStandardItem(student_name)
+
+            student_item.appendRow([QStandardItem("ФИО отца:"), QStandardItem(f_name)])
+            student_item.appendRow([QStandardItem("ЗП отца:"), QStandardItem(f_inc)])
+            student_item.appendRow([QStandardItem("ФИО матери:"), QStandardItem(m_name)])
+            student_item.appendRow([QStandardItem("ЗП матери:"), QStandardItem(m_inc)])
+            student_item.appendRow([QStandardItem("Братья:"), QStandardItem(bros)])
+            student_item.appendRow([QStandardItem("Сестры:"), QStandardItem(sis)])
+
+            tree_model.appendRow([student_item, QStandardItem("")])
+
         self.view.table.setModel(table_model)
+        self.view.tree.setModel(tree_model)
+
+        self.view.tree.setColumnWidth(0, 300)
+
         self.view.page_label.setText(f"{self.current_page} из {total_pages}")
         self.update_pagination_buttons(total_pages)
+
+
+    def show_table_view(self):
+        self.view.views_stack.setCurrentIndex(0)
+
+    def show_tree_view(self):
+        self.view.views_stack.setCurrentIndex(1)
 
     def update_pagination_buttons(self, total_pages):
         self.view.btn_first.setEnabled(self.current_page > 1)

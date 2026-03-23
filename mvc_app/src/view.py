@@ -3,7 +3,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QTableView,
     QPushButton, QLabel, QSpinBox,
     QLineEdit, QDoubleSpinBox, QDialog,
-    QFormLayout,QMessageBox
+    QFormLayout,QMessageBox,
+    QStackedWidget, QTreeView
 )
 from PySide6.QtGui import QAction
 import sys
@@ -27,6 +28,7 @@ class MainWindow(QMainWindow):
     def setup_menu(self):
         menubar = self.menuBar()
         file_menu = menubar.addMenu('Файл')
+        view_menu = menubar.addMenu('Вид')
         student_menu = menubar.addMenu('Студенты')
 
         # меню файл
@@ -35,6 +37,12 @@ class MainWindow(QMainWindow):
 
         file_menu.addAction(self.action_load_xml)
         file_menu.addAction(self.action_save_xml)
+
+        # меню вид
+        self.action_view_table = QAction('Таблица', self)
+        self.action_view_tree = QAction('Дерево', self)
+        view_menu.addAction(self.action_view_table)
+        view_menu.addAction(self.action_view_tree)
 
         # меню студенты
         self.action_add = QAction('Добавить студента', self)
@@ -54,8 +62,15 @@ class MainWindow(QMainWindow):
         toolbar.addAction(self.action_delete)
 
     def setup_body(self):
+        self.views_stack = QStackedWidget()
+
         self.table = QTableView()
-        self.main_layout.addWidget(self.table)
+        self.tree = QTreeView()
+
+        self.views_stack.addWidget(self.table)
+        self.views_stack.addWidget(self.tree)
+
+        self.main_layout.addWidget(self.views_stack)
 
     def setup_footer(self):
         footer_layout = QHBoxLayout()
