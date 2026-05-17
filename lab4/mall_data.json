@@ -1,0 +1,130 @@
+{
+    "customer": {
+        "name": "user 1",
+        "balance": 10000.0,
+        "participates_in_promotions": true,
+        "purchased_items": []
+    },
+    "malls": [
+        {
+            "name": "city plaza",
+            "capacity": 20,
+            "shops": [
+                {
+                    "name": "tech hub",
+                    "seller": {
+                        "name": "alice",
+                        "rating": 4.5,
+                        "reviews": 15
+                    },
+                    "revenue": 0.0,
+                    "inventory": [
+                        {
+                            "id": 101,
+                            "name": "smartphone",
+                            "price": 499.99,
+                            "stock": 50
+                        },
+                        {
+                            "id": 102,
+                            "name": "laptop",
+                            "price": 899.50,
+                            "stock": 20
+                        },
+                        {
+                            "id": 103,
+                            "name": "headphones",
+                            "price": 50.0,
+                            "stock": 100
+                        }
+                    ],
+                    "promotion": {
+                        "name": "black friday",
+                        "discount": 15.0
+                    }
+                },
+                {
+                    "name": "fashion corner",
+                    "seller": {
+                        "name": "bob",
+                        "rating": 4.1,
+                        "reviews": 8
+                    },
+                    "revenue": 0.0,
+                    "inventory": [
+                        {
+                            "id": 201,
+                            "name": "t-shirt",
+                            "price": 15.0,
+                            "stock": 200
+                        },
+                        {
+                            "id": 202,
+                            "name": "jeans",
+                            "price": 45.0,
+                            "stock": 75
+                        }
+                    ],
+                    "promotion": null
+                }
+            ]
+        },
+        {
+            "name": "grand avenue",
+            "capacity": 10,
+            "shops": [
+                {
+                    "name": "book worm",
+                    "seller": {
+                        "name": "charlie",
+                        "rating": 4.9,
+                        "reviews": 30
+                    },
+                    "revenue": 0.0,
+                    "inventory": [
+                        {
+                            "id": 301,
+                            "name": "python crash course",
+                            "price": 30.0,
+                            "stock": 40
+                        },
+                        {
+                            "id": 302,
+                            "name": "clean code",
+                            "price": 35.0,
+                            "stock": 25
+                        }
+                    ],
+                    "promotion": null
+                },
+                {
+                    "name": "sports center",
+                    "seller": {
+                        "name": "diana",
+                        "rating": 3.8,
+                        "reviews": 5
+                    },
+                    "revenue": 0.0,
+                    "inventory": [
+                        {
+                            "id": 401,
+                            "name": "yoga mat",
+                            "price": 20.0,
+                            "stock": 60
+                        },
+                        {
+                            "id": 402,
+                            "name": "dumbbells",
+                            "price": 55.0,
+                            "stock": 15
+                        }
+                    ],
+                    "promotion": {
+                        "name": "fitness week",
+                        "discount": 5.0
+                    }
+                }
+            ]
+        }
+    ]
+}
