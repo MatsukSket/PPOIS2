@@ -20,25 +20,25 @@
 ```text
 checkers_project/
 │
-├── assets/                 # Медиафайлы (иконка, звуки .wav)
+├── assets/                 # Медиафайлы
 │   ├── icon.png
 │   ├── move.wav
 │   ├── capture.wav
 │   └── king.wav
 │
-├── core/                   # ЯДРО ИГРЫ (Чистый Python, без Pygame)
+├── core/                   # ЯДРО ИГРЫ
 │   ├── __init__.py
-│   ├── enums.py            # Перечисления (цвета, режимы)
-│   ├── piece.py            # Логическая модель шашки (цвет, статус дамки)
-│   └── board.py            # Матрица 8x8, генерация ходов (DFS), правила
+│   ├── enums.py
+│   ├── piece.py
+│   └── board.py
 │
-├── app/                    # КЛИЕНТ (Визуализация Pygame)
+├── app/                    # КЛИЕНТ
 │   ├── __init__.py
-│   ├── consts.py           # Настройки (размеры окна, цвета, FPS)
-│   ├── renderer.py         # Отрисовка слоев, переворота доски и анимаций
-│   ├── game.py             # Контроллер: связь кликов мыши с логикой ядра
-│   ├── audio.py            # Менеджер звуковых эффектов
-│   └── menu.py             # Экраны интерфейса (Главное меню, Пауза, Финиш)
+│   ├── consts.py
+│   ├── renderer.py
+│   ├── game.py
+│   ├── audio.py
+│   └── menu.py
 │
-├── main.py                 # Точка входа (Инициализация Pygame, State Machine)
-└── README.md               # Документация проекта
+├── main.py
+└── README.md
