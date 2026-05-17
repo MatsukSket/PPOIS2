@@ -1,0 +1,67 @@
+{
+    "WINDOW_WIDTH": 800,
+    "WINDOW_HEIGHT": 880,
+    "UI_HEIGHT": 80,
+    "FULLSCREEN": false,
+    "FPS": 60,
+    "WHITE_PIECE": [
+        249,
+        249,
+        249
+    ],
+    "BLACK_PIECE": [
+        92,
+        89,
+        87
+    ],
+    "PIECE_BORDER": [
+        37,
+        35,
+        33
+    ],
+    "GOLD": [
+        255,
+        215,
+        0
+    ],
+    "DARK_PLATE": [
+        115,
+        149,
+        82
+    ],
+    "LIGHT_PLATE": [
+        235,
+        236,
+        208
+    ],
+    "HIGHLIGHT_TILE": [
+        185,
+        202,
+        66
+    ],
+    "POSSIBLE_MOVE": [
+        99,
+        128,
+        70
+    ],
+    "UI_BG_COLOR": [
+        210,
+        210,
+        210
+    ],
+    "BUTTON_COLOR": [
+        200,
+        200,
+        200
+    ],
+    "BUTTON_HOVER": [
+        170,
+        170,
+        170
+    ],
+    "TEXT_COLOR": [
+        0,
+        0,
+        0
+    ]
+}

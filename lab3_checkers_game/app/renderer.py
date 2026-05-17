@@ -1,67 +1,83 @@
 import pygame
-from app.consts import *
+from app.consts import cfg, ROWS, COLS
 from core.board import Board
 from core.enums import Color
 
 
 class Renderer:
-    """Отвечает за визуализацию всех элементов игры с помощью модуля Pygame."""
+    """Отвечает за визуализацию игры с поддержкой адаптивных размеров поля."""
 
     def __init__(self, screen):
         self.screen = screen
 
     def _get_visual_pos(self, row: int, col: int, flip_board: bool) -> tuple[int, int]:
-        """Преобразует логические координаты матрицы в визуальные индексы."""
+        """Возвращает логические индексы клетки с учетом переворота доски."""
         if flip_board:
             return ROWS - 1 - row, COLS - 1 - col
         return row, col
 
+    def _get_tile_rect(self, row: int, col: int, flip_board: bool) -> pygame.Rect:
+        """Возвращает прямоугольник (Rect) для конкретной клетки."""
+        v_row, v_col = self._get_visual_pos(row, col, flip_board)
+        x = cfg.BOARD_OFFSET_X + v_col * cfg.TILE_SIZE
+        y = cfg.BOARD_OFFSET_Y + v_row * cfg.TILE_SIZE
+        return pygame.Rect(x, y, cfg.TILE_SIZE, cfg.TILE_SIZE)
+
+    def _get_pixel_center(self, row: int, col: int, flip_board: bool) -> tuple[int, int]:
+        """Возвращает координаты центра клетки в пикселях (x, y)."""
+        rect = self._get_tile_rect(row, col, flip_board)
+        return rect.centerx, rect.centery
+
+    def _draw_single_piece(self, piece, x: int, y: int, radius: int = None):
+        """Универсальный метод для отрисовки одной шашки (с короной и обводкой)."""
+        if radius is None:
+            radius = cfg.PIECE_RADIUS
+
+        color = cfg.WHITE_PIECE if piece.color == Color.WHITE else cfg.BLACK_PIECE
+        border_width = min(cfg.PIECE_BORDER_WIDTH, radius)  # Чтобы обводка не ломалась при сужении радиуса
+
+        pygame.draw.circle(self.screen, color, (x, y), radius)
+        if border_width > 0:
+            pygame.draw.circle(self.screen, cfg.PIECE_BORDER, (x, y), radius, border_width)
+
+        if piece.is_king and radius > 15:
+            pygame.draw.circle(self.screen, cfg.GOLD, (x, y), max(2, radius - 15))
+
+
     def draw_squares(self, flip_board: bool):
-        """Отрисовывает шахматную сетку со сдвигом вниз и черной каймой."""
-        pygame.draw.rect(self.screen, LIGHT_PLATE, (0, UI_HEIGHT, WINDOW_WIDTH, BOARD_SIZE))
+        self.screen.fill(cfg.UI_BG_COLOR)
+
+        pygame.draw.rect(self.screen, cfg.LIGHT_PLATE,
+                         (cfg.BOARD_OFFSET_X, cfg.BOARD_OFFSET_Y, cfg.BOARD_SIZE, cfg.BOARD_SIZE))
 
         for row in range(ROWS):
             for col in range((row + 1) % 2, COLS, 2):
-                v_row, v_col = self._get_visual_pos(row, col, flip_board)
-                pygame.draw.rect(
-                    self.screen, DARK_PLATE,
-                    (v_col * TILE_SIZE, v_row * TILE_SIZE + UI_HEIGHT, TILE_SIZE, TILE_SIZE)
-                )
+                rect = self._get_tile_rect(row, col, flip_board)
+                pygame.draw.rect(self.screen, cfg.DARK_PLATE, rect)
 
-        pygame.draw.rect(self.screen, (0, 0, 0), (0, UI_HEIGHT, WINDOW_WIDTH, BOARD_SIZE), 2)
+        pygame.draw.rect(self.screen, (0, 0, 0),
+                         (cfg.BOARD_OFFSET_X, cfg.BOARD_OFFSET_Y, cfg.BOARD_SIZE, cfg.BOARD_SIZE), 2)
 
-    def draw_pieces(self, board: Board, flip_board: bool, ignore_pos: tuple = None):
-        """Отрисовывает все шашки на доске (позволяет скрыть одну во время анимации)."""
+    def draw_pieces(self, board: Board, flip_board: bool, ignore_pos=None):
+        ignore_list = [ignore_pos] if isinstance(ignore_pos, tuple) else (ignore_pos or [])
+
         for row in range(ROWS):
             for col in range(COLS):
-                if ignore_pos and (row, col) == ignore_pos:
+                if (row, col) in ignore_list:
                     continue
-
                 piece = board.get_piece(row, col)
                 if piece:
-                    v_row, v_col = self._get_visual_pos(row, col, flip_board)
-                    x = v_col * TILE_SIZE + TILE_SIZE // 2
-                    y = v_row * TILE_SIZE + TILE_SIZE // 2 + UI_HEIGHT
-
-                    color = WHITE_PIECE if piece.color == Color.WHITE else BLACK_PIECE
-                    pygame.draw.circle(self.screen, color, (x, y), PIECE_RADIUS)
-                    pygame.draw.circle(self.screen, PIECE_BORDER, (x, y), PIECE_RADIUS, PIECE_BORDER_WIDTH)
-
-                    if piece.is_king:
-                        pygame.draw.circle(self.screen, GOLD, (x, y), PIECE_RADIUS - 15)
+                    x, y = self._get_pixel_center(row, col, flip_board)
+                    self._draw_single_piece(piece, x, y)
 
     def draw_board(self, board: Board, controller=None, flip_board: bool = False):
-        """Главный метод отрисовки игрового кадра (доска, шашки, интерфейс)."""
         self.draw_squares(flip_board)
 
         if controller and controller.selected:
             r, c = board.get_piece_position(controller.selected)
             if r != -1:
-                v_row, v_col = self._get_visual_pos(r, c, flip_board)
-                pygame.draw.rect(
-                    self.screen, HIGHLIGHT_TILE,
-                    (v_col * TILE_SIZE, v_row * TILE_SIZE + UI_HEIGHT, TILE_SIZE, TILE_SIZE)
-                )
+                rect = self._get_tile_rect(r, c, flip_board)
+                pygame.draw.rect(self.screen, cfg.HIGHLIGHT_TILE, rect)
 
         self.draw_pieces(board, flip_board)
         self.draw_valid_moves(controller, flip_board)
@@ -69,59 +85,58 @@ class Renderer:
         pygame.display.update()
 
     def draw_valid_moves(self, controller, flip_board: bool):
-        """Отрисовывает маркеры-подсказки на клетках доступных ходов."""
         if controller and controller.valid_moves:
             for move in controller.valid_moves:
                 row, col = move
-                v_row, v_col = self._get_visual_pos(row, col, flip_board)
-                x = v_col * TILE_SIZE + TILE_SIZE // 2
-                y = v_row * TILE_SIZE + TILE_SIZE // 2 + UI_HEIGHT
-                pygame.draw.circle(self.screen, POSSIBLE_MOVE, (x, y), POSSIBLE_MOVE_RADIUS)
+                x, y = self._get_pixel_center(row, col, flip_board)
+                pygame.draw.circle(self.screen, cfg.POSSIBLE_MOVE, (x, y), cfg.POSSIBLE_MOVE_RADIUS)
 
     def draw_game_ui(self):
-        """Отрисовывает верхнюю панель и элементы UI на ней."""
-        pygame.draw.rect(self.screen, UI_BG_COLOR, (0, 0, WINDOW_WIDTH, UI_HEIGHT))
-
-        pygame.draw.rect(self.screen, BUTTON_COLOR, PAUSE_BTN_RECT, border_radius=10)
-        pygame.draw.rect(self.screen, TEXT_COLOR, PAUSE_BTN_RECT, width=2, border_radius=10)
+        pygame.draw.rect(self.screen, cfg.UI_BG_COLOR, (0, 0, cfg.ACTUAL_WIDTH, cfg.UI_HEIGHT))
+        pygame.draw.rect(self.screen, cfg.BUTTON_COLOR, cfg.PAUSE_BTN_RECT, border_radius=10)
+        pygame.draw.rect(self.screen, cfg.TEXT_COLOR, cfg.PAUSE_BTN_RECT, width=2, border_radius=10)
 
         font = pygame.font.SysFont("comicsans", 30)
-        text = font.render("Пауза", True, TEXT_COLOR)
-        x = PAUSE_BTN_RECT.x + (PAUSE_BTN_RECT.width - text.get_width()) // 2
-        y = PAUSE_BTN_RECT.y + (PAUSE_BTN_RECT.height - text.get_height()) // 2
+        text = font.render("Пауза", True, cfg.TEXT_COLOR)
+        x = cfg.PAUSE_BTN_RECT.x + (cfg.PAUSE_BTN_RECT.width - text.get_width()) // 2
+        y = cfg.PAUSE_BTN_RECT.y + (cfg.PAUSE_BTN_RECT.height - text.get_height()) // 2
         self.screen.blit(text, (x, y))
 
+
     def animate_move(self, piece, start_pos, end_pos, board, flip_board, clock):
-        """Создает плавную анимацию перемещения шашки из start_pos в end_pos."""
-        start_r, start_c = start_pos
-        end_r, end_c = end_pos
-
-        v_start_r, v_start_c = self._get_visual_pos(start_r, start_c, flip_board)
-        v_end_r, v_end_c = self._get_visual_pos(end_r, end_c, flip_board)
-
-        start_x = v_start_c * TILE_SIZE + TILE_SIZE // 2
-        start_y = v_start_r * TILE_SIZE + TILE_SIZE // 2 + UI_HEIGHT
-        end_x = v_end_c * TILE_SIZE + TILE_SIZE // 2
-        end_y = v_end_r * TILE_SIZE + TILE_SIZE // 2 + UI_HEIGHT
+        start_x, start_y = self._get_pixel_center(*start_pos, flip_board)
+        end_x, end_y = self._get_pixel_center(*end_pos, flip_board)
 
         frames = 15
         dx = (end_x - start_x) / frames
         dy = (end_y - start_y) / frames
 
         for i in range(frames + 1):
-            clock.tick(60)
-
+            clock.tick(cfg.FPS)
             self.draw_squares(flip_board)
-            self.draw_pieces(board, flip_board, ignore_pos=(start_r, start_c))
+            self.draw_pieces(board, flip_board, ignore_pos=start_pos)
             self.draw_game_ui()
 
-            curr_x = start_x + dx * i
-            curr_y = start_y + dy * i
+            curr_x = int(start_x + dx * i)
+            curr_y = int(start_y + dy * i)
 
-            color = WHITE_PIECE if piece.color == Color.WHITE else BLACK_PIECE
-            pygame.draw.circle(self.screen, color, (int(curr_x), int(curr_y)), PIECE_RADIUS)
-            pygame.draw.circle(self.screen, PIECE_BORDER, (int(curr_x), int(curr_y)), PIECE_RADIUS, PIECE_BORDER_WIDTH)
-            if piece.is_king:
-                pygame.draw.circle(self.screen, GOLD, (int(curr_x), int(curr_y)), PIECE_RADIUS - 15)
+            self._draw_single_piece(piece, curr_x, curr_y)
+            pygame.display.update()
+
+    def animate_capture(self, skipped: list, board: Board, flip_board: bool, clock):
+        frames = 15
+        for i in range(frames + 1):
+            clock.tick(cfg.FPS)
+            self.draw_squares(flip_board)
+            self.draw_pieces(board, flip_board, ignore_pos=skipped)
+            self.draw_game_ui()
+
+            radius = max(0, int(cfg.PIECE_RADIUS * (1 - i / frames)))
+
+            for row, col in skipped:
+                piece = board.get_piece(row, col)
+                if piece and radius > 0:
+                    x, y = self._get_pixel_center(row, col, flip_board)
+                    self._draw_single_piece(piece, x, y, radius)
 
             pygame.display.update()

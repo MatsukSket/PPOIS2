@@ -1,26 +1,36 @@
 import pygame
 import os
 
+
 class AudioManager:
-    """Управляет загрузкой и воспроизведением звуковых эффектов."""
+    """Управляет загрузкой и воспроизведением звуков и музыки."""
 
     def __init__(self):
-        # Инициализируем аудио-модуль Pygame
         pygame.mixer.init()
-
-        # Загружаем звуки (если файлов нет, программа не упадет, а просто оставит None)
         self.move_sound = self._load_sound("move.wav")
         self.capture_sound = self._load_sound("capture.wav")
         self.king_sound = self._load_sound("king.wav")
+        self.bg_music_path = os.path.join("assets", "background.mp3")
 
     def _load_sound(self, filename: str):
         path = os.path.join("assets", filename)
         if os.path.exists(path):
             sound = pygame.mixer.Sound(path)
-            sound.set_volume(0.5)  # Громкость 50%
+            sound.set_volume(0.5)
             return sound
-        print(f"Предупреждение: звук {path} не найден.")
         return None
+
+    def play_bg_music(self):
+        """Запускает фоновую музыку по кругу."""
+        if os.path.exists(self.bg_music_path):
+            pygame.mixer.music.load(self.bg_music_path)
+            pygame.mixer.music.set_volume(0.2)
+            pygame.mixer.music.play(-1)
+        else:
+            print(f"Предупреждение: фоновая музыка {self.bg_music_path} не найдена.")
+
+    def stop_bg_music(self):
+        pygame.mixer.music.stop()
 
     def play_move(self):
         if self.move_sound: self.move_sound.play()
