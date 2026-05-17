@@ -76,16 +76,16 @@ python main.py --mode cli
 
 ```text
 /
-├── main.py                 - Точка входа в приложение и парсер аргументов
-├── mall_data.json          - Файл базы данных (генерируется автоматически)
+├── main.py
+├── mall_data.json
 └── src/
     ├── __init__.py
-    ├── models.py           - Классы доменной модели
-    ├── exceptions.py       - Пользовательские классы ошибок доменной области
-    ├── services.py         - Менеджер состояния, бизнес-логика и сериализация
-    ├── presenter.py        - MVP Презентер
+    ├── models.py
+    ├── exceptions.py
+    ├── services.py
+    ├── presenter.py
     └── views/
         ├── __init__.py
-        ├── cli_view.py     - Консольное представление
-        └── gui_view.py     - Графическое представление (PySide6)
+        ├── cli_view.py 
+        └── gui_view.py
 ```
