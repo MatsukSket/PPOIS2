@@ -1,32 +1,37 @@
 import sys
-from src.models import Customer
-from src.exceptions import ShoppingMallException, OutOfStockError
-from src.services import MallServices
+from domain.models import Buyer
+from domain.exceptions import ShoppingMallException
+from services.operations import MallOperations
 
 
 class CLI:
-    """Command Line Interface class."""
+    """
+    Command Line Interface for the Shopping Mall system.
+    Handles user inputs and displays outputs.
+    """
 
-    def __init__(self, operations: MallServices, current_user: Customer) -> None:
+    def __init__(self, operations: MallOperations, current_user: Buyer) -> None:
         self.operations = operations
         self.user = current_user
 
-    def display_main_menu(self) -> None:
+    def display_menu(self) -> None:
+        """Prints the main menu to the console."""
         print("\n" + "=" * 30)
         print(f"Welcome, {self.user.name}! Balance: ${self.user.balance:.2f}")
         print("--- Shopping Mall CLI ---")
         print("1. Search for a product")
         print("2. Buy a product")
         print("3. Toggle promotion participation")
-        print("4. Rate a seller service")
+        print("4. Rate a seller's service")
         print("5. View purchased items")
         print("0. Exit")
         print("=" * 30)
 
     def run(self) -> None:
+        """Main loop keeping the CLI alive."""
         while True:
-            self.display_main_menu()
-            choice = input('Select an option: ')
+            self.display_menu()
+            choice = input("Select an option (0-5): ").strip()
 
             try:
                 if choice == '1':
@@ -40,16 +45,19 @@ class CLI:
                 elif choice == '5':
                     self._handle_profile()
                 elif choice == '0':
-                    print('Thank you for shopping with us! Bye!')
+                    print("Exiting the Shopping Mall. Goodbye!")
                     sys.exit(0)
                 else:
-                    print("Invalid choice. Please enter a number from 0 to 5.")
-            except ShoppingMallException as sme:
-                print(f"\n{sme}")
-            except ValueError as ve:
-                print(f"\n{ve}")
-            except Exception as ex:
-                print(f"\n{ex}")
+                    print("Invalid choice. Please enter a number between 0 and 5.")
+            except ShoppingMallException as e:
+                # Handle domain-specific errors (OutOfStock, InsufficientFunds, etc.)
+                print(f"\n[MALL ERROR] {e}")
+            except ValueError as e:
+                # Handle standard value errors (e.g., bad int conversion)
+                print(f"\n[INPUT ERROR] {e}")
+            except Exception as e:
+                # Fallback for unexpected errors
+                print(f"\n[UNEXPECTED ERROR] {e}")
 
     def _handle_search(self) -> None:
         query = input("Enter product name to search: ").strip()
@@ -91,5 +99,3 @@ class CLI:
         print(f"\nPurchased Items ({len(self.user.purchased_items)} total):")
         for item in self.user.purchased_items:
             print(f"- {item.name} (Original Price: ${item.price:.2f})")
-
-

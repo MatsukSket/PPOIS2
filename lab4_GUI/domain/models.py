@@ -1,15 +1,11 @@
 from dataclasses import dataclass, field
 from typing import List, Dict, Optional
-from src.exceptions import (
-    OutOfStockError,
-    InsufficientFundsError,
-    SpaceAlreadyRentedError
-)
-from copy import copy
+from domain.exceptions import OutOfStockError, InsufficientFundsError, SpaceAlreadyRentedError
+
 
 @dataclass
 class Product:
-    """Product model."""
+    """Product model"""
     id: int
     name: str
     price: float
@@ -17,15 +13,15 @@ class Product:
 
     def decrease_stock(self, quantity: int = 1) -> None:
         if self.stock < quantity:
-            raise OutOfStockError(f"Product '{self.name}' is out of stock.")
+            raise OutOfStockError(f"Product '{self.name}' is out of stock or too much has been requested.")
         self.stock -= quantity
 
 
 @dataclass
 class Promotion:
-    """Promotion model"""
+    """Promotion (discount) model"""
     name: str
-    discount_percent: float
+    discount_percent: float  # Например, 15.0 для 15% скидки
 
     def apply_discount(self, price: float) -> float:
         return price * (1 - self.discount_percent / 100)
@@ -33,13 +29,13 @@ class Promotion:
 
 @dataclass
 class Person:
-    """Person model."""
+    """Base class of human"""
     name: str
 
 
 @dataclass
-class Customer(Person):
-    """Customer model."""
+class Buyer(Person):
+    """Buyer model"""
     balance: float
     purchased_items: List[Product] = field(default_factory=list)
     participates_in_promotions: bool = False
@@ -54,8 +50,8 @@ class Customer(Person):
 
 @dataclass
 class Seller(Person):
-    """Seller model."""
-    service_rating: float = 0.0
+    """Seller model"""
+    service_rating: float = 5.0
     reviews_count: int = 0
 
     def update_rating(self, new_rating: float) -> None:
@@ -66,27 +62,28 @@ class Seller(Person):
 
 
 class CashRegister:
-    """Cash Register."""
-    def __init__(self):
+    """Cash Register. Responsible for transactions"""
+
+    def __init__(self) -> None:
         self.total_revenue: float = 0.0
 
-    def process_purchase(self, customer: Customer, product: Product, promotion: Optional[Promotion] = None) -> None:
-        """Making purchase"""
+    def process_purchase(self, buyer: Buyer, product: Product, promotion: Optional[Promotion] = None) -> None:
+        """Making a purchase"""
         final_price = product.price
 
-        if promotion and customer.participates_in_promotions:
+        # Применяем акцию, если она есть и покупатель в ней участвует
+        if promotion and buyer.participates_in_promotions:
             final_price = promotion.apply_discount(final_price)
 
-        customer.deduct_funds(final_price)
+        buyer.deduct_funds(final_price)
         product.decrease_stock(1)
-        purchased_item = copy(product)
-        customer.purchased_items.append(purchased_item)
+        buyer.purchased_items.append(product)
         self.total_revenue += final_price
 
 
 @dataclass
 class Shop:
-    """Shop model."""
+    """Shop model"""
     name: str
     seller: Seller
     cash_register: CashRegister = field(default_factory=CashRegister)
@@ -98,7 +95,8 @@ class Shop:
 
 
 class ShoppingGallery:
-    """Shopping Gallery."""
+    """Shopping gallery that manages rentals and store searches."""
+
     def __init__(self, capacity: int = 10) -> None:
         self.capacity = capacity
         self.shops: Dict[str, Shop] = {}
@@ -107,12 +105,12 @@ class ShoppingGallery:
         if len(self.shops) >= self.capacity:
             raise SpaceAlreadyRentedError("There are no spaces available for rent in the gallery.")
         if shop.name in self.shops:
-            raise SpaceAlreadyRentedError(f"Shop {shop.name} is already exists.")
+            raise SpaceAlreadyRentedError(f"A store named '{shop.name}' already exists.")
         self.shops[shop.name] = shop
 
 
 @dataclass
 class ShoppingMall:
-    """Shopping Mall model."""
+    """Main class of the Shopping Mall"""
     name: str
     gallery: ShoppingGallery = field(default_factory=ShoppingGallery)
